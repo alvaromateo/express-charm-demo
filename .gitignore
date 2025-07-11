@@ -11,7 +11,13 @@ Thumbs.db
 .AppleDouble
 .LSOverride
 .spelling
-.vscode
+.vscode/*
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # [cache] Cache and backup
 *.bak
@@ -21,6 +27,7 @@ Thumbs.db
 # [data] Local data
 *.sqlite*
 *.log
+*.log*
 logs/
 pids
 *.pid
@@ -51,7 +58,7 @@ _site/
 .docker-project
 .*.hash
 .envrc
-.env.local
+*.local
 env/
 env[23]/
 virtual/
@@ -66,11 +73,11 @@ venv/
 
 node_modules/
 bower_components/
-*.log
 
 coverage/
 build/
 dist/
+dist-ssr/
 *.charm
 *.rock
 .coverage
