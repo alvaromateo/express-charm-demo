@@ -10,13 +10,7 @@ This repository contains a demo of how would it look to have an application that
 This approach simplifies a migration from Flask Jinja templates to SSR React Components,
 without having to migrate the full application.
 
-## How to use this Demo
-
-All the scripts have been tested with bash, so if your main shell is not bash you'll
-have to run them with:
-```sh
-bash scripts/<script-name>
-```
+## How to use this Demo locally
 
 ### Requirements
 
@@ -32,4 +26,16 @@ To run the project in your own machine for development purposes you'll need:
 
 ### Dev environment
 
-Follow these steps to get this project working locally.
+To start working get in the root project directory and run:
+```bash
+docker compose up
+```
+
+## How to try it on Juju
+
+All the scripts have been tested with bash, so if your main shell is not bash you'll
+have to run them with:
+```sh
+bash scripts/<script-name>
+```
+

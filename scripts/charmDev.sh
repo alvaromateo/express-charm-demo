@@ -12,7 +12,12 @@ sudo snap install charmcraft --channel latest/edge --classic
 # microk8s
 sudo snap install microk8s --channel 1.31-strict/stable
 sudo adduser $USER snap_microk8s
-newgrp snap_microk8s
+
+# problem with running newgrp in scripts
+# https://unix.stackexchange.com/questions/18897/problem-while-running-newgrp-command-in-script
+
+/urs/bin/newgrp snap_microk8s <<EONG
+
 # addons
 # Required for Juju to provide storage volumes
 sudo microk8s enable hostpath-storage
@@ -31,3 +36,5 @@ juju bootstrap microk8s dev-controller
 # enable experimental extensions
 export ROCKCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS=true
 export CHARMCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS=true
+
+EONG
