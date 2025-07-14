@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node server",
+    "dev": "ts-node src/server/server.ts",
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build --outDir dist/client",
     "build:server": "vite build --ssr src/entry-server.tsx --outDir dist/server",
-    "preview": "cross-env NODE_ENV=production node server"
+    "preview": "cross-env NODE_ENV=production ts-node src/server/server.ts"
   },
   "dependencies": {
     "compression": "^1.8.0",
@@ -18,12 +18,14 @@
     "sirv": "^3.0.1"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.10",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react-swc": "^3.10.2",
     "cross-env": "^7.0.3",
+    "ts-node": "^10.9.2",
     "typescript": "~5.8.3",
     "vite": "^7.0.0"
   }

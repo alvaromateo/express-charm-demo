@@ -15,8 +15,7 @@ const templateHtml = isProduction
 const app = express()
 
 // Add Vite or respective production middlewares
-/** @type {import('vite').ViteDevServer | undefined} */
-let vite
+let vite: import('vite').ViteDevServer
 if (!isProduction) {
   const { createServer } = await import('vite')
   vite = await createServer({
@@ -48,7 +47,7 @@ app.use('*all', async (req, res) => {
       render = (await vite.ssrLoadModule('/src/entry-server.tsx')).render
     } else {
       template = templateHtml
-      render = (await import('./dist/server/entry-server.js')).render
+      render = (await import('../../dist/server/entry-server.js')).render
     }
 
     const rendered = await render(url)

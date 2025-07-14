@@ -1,10 +1,15 @@
 import './App.css'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [message, setMessage] = useState("SSR message")
 
-  // useEffect()
+  useEffect(() => {
+    fetch("/api/test-flask")
+      .then(response => response.json())
+      .then(data => setMessage(data))
+  }, [])
 
   return (
     <>
@@ -27,6 +32,9 @@ function App() {
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
+      </p>
+      <p id="flask-output">
+        {message}
       </p>
     </>
   )
