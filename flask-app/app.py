@@ -3,7 +3,7 @@ from flask import Flask
 app = Flask(__name__)
 
 
-@app.route('/test')
+@app.route('/api/test')
 def hello():
     print('/test endpoint hit')
-    return '/test API endpoint'
+    return '{ "message": "API endpoint success!" }'

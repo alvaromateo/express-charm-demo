@@ -1,14 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from "react";
+
+type ApiTestResponse = {
+  message: string;
+};
 
 function Body() {
-  const [count, setCount] = useState(0)
-  const [message, setMessage] = useState("SSR message")
+  const [count, setCount] = useState(0);
+  const [message, setMessage] = useState("SSR message");
 
   useEffect(() => {
-    fetch("/api/test-flask")
-      .then(response => response.json())
-      .then(data => setMessage(data as string))
-  }, [])
+    fetch("/api/test")
+      .then((response) => response.json())
+      .then((data) => setMessage((data as ApiTestResponse).message));
+  }, []);
 
   return (
     <>
@@ -32,11 +36,9 @@ function Body() {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
-      <p id="flask-output">
-        {message}
-      </p>
+      <p id="flask-output">{message}</p>
     </>
-  )
+  );
 }
 
-export default Body
+export default Body;
