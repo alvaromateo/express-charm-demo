@@ -13,7 +13,6 @@ export async function setUpDevServer(app: Express): Promise<void> {
       logLevel: "info",
       server: {
         middlewareMode: true,
-        hmr: false,
       },
       appType: "custom",
       root: process.cwd(),
