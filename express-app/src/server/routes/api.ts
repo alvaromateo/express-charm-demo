@@ -1,7 +1,10 @@
-import { Router } from 'express'
+import { Router } from "express";
 
-const router = Router()
+const router = Router();
 
-router.all("/")
+router.all("/", (req, res, next) => {
+  console.log("Forwarding request to Flask BE...");
+  next();
+});
 
-export default router
+export default router;

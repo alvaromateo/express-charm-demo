@@ -3,8 +3,26 @@ services:
     build: ./express-app
     ports:
       - "3000:3000"
+      - "9229:9229"
     environment:
       PORT: 3000
+    develop:
+      watch:
+        - action: sync
+          path: ./express-app/src/client
+          target: /code/src/client
+        - action: sync+restart
+          path: ./express-app/src/server
+          target: /code/src/server
+        - action: rebuild
+          path: ./express-app
+          include:
+            - "*.json"
+            - vite.config.ts
+            - Dockerfile
+        - action: sync+restart
+          path: ./express-app/index.html
+          target: /code/index.html
 
   flask-app:
     build: ./flask-app
@@ -12,3 +30,13 @@ services:
       - "5000:5000"
     environment:
       PORT: 5000
+    develop:
+      watch:
+        - action: sync
+          path: ./flask-app
+          target: /code
+        - action: rebuild
+          path: ./flask-app
+          include:
+            - Dockerfile
+            - requirements.txt
