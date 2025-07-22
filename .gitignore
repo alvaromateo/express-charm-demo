@@ -11,7 +11,7 @@ Thumbs.db
 .AppleDouble
 .LSOverride
 .spelling
-.vscode/*
+.vscode/
 .idea
 *.suo
 *.ntvs*
