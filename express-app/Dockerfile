@@ -5,9 +5,9 @@ USER app
 
 WORKDIR /code
 
-COPY --chown=app:app package.json package-lock.json ./
+COPY --chown=app:app app/package.json app/package-lock.json ./
 RUN npm install
 
-COPY --chown=app:app . ./
+COPY --chown=app:app app ./
 
 CMD ["npm", "run", "dev"]

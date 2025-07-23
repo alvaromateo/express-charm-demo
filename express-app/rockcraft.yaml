@@ -18,23 +18,10 @@ platforms:
   # ppc64el:
   # s390x:
 
-run-user: _daemon_
-services:
-  expressjs:
-    override: replace
-    startup: enabled
-    user: _daemon_
-    working-dir: /app
-    environment:
-      NODE_ENV: production
+extensions:
+  - expressjs-framework
 
 parts:
-  client:
-    plugin: npm
-    npm-include-node: false
-    source: src/
-    source-type: local
-    build-packages:
-      - nodejs
-      - npm
-    override-build: |
+  expressjs-framework/install-app:
+    npm-include-node: true
+    npm-node-version: lts/jod
