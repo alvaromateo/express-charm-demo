@@ -125,3 +125,14 @@ delete them before running the Multipass VM and start everything inside it.
 
 If you want to keep the Python virtual environments, be sure to name them something different
 than _.venv_ (i.e. .venv_host). This way there will be no conflicts.
+
+#### No keyring found
+
+If you see this output when running some of the commands in the Multipass VM then do:
+
+```sh
+snapcraft export-login ~/snapcraft-login
+export SNAPCRAFT_STORE_CREDENTIALS=$(cat ~/snapcraft-login)
+charmcraft login --export ~/charmcraft-login
+export CHARMCRAFT_AUTH=$(cat ~/charmcraft-login)
+```

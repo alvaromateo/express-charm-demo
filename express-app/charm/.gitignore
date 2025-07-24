@@ -8,4 +8,5 @@ __pycache__/
 .idea
 .vscode/
 
-/lib/charms/
+/lib/charms/*
+!/lib/charms/http_k8s/
