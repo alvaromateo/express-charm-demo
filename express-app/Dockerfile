@@ -3,7 +3,7 @@ FROM node:lts-alpine
 RUN addgroup -S app && adduser -S app -G app
 USER app
 
-WORKDIR /code
+WORKDIR /app
 
 COPY --chown=app:app app/package.json app/package-lock.json ./
 RUN npm install

@@ -18,12 +18,15 @@ class ExpressCharmDemoCharm(paas_charm.expressjs.Charm):
     """ExpressJS Charm service."""
 
     def __init__(self, *args: typing.Any) -> None:
-        """Initialize the instance.
-
-        Args:
-            args: passthrough to CharmBase.
+        """
+        Initialize the instance.
         """
         super().__init__(*args)
+
+        self.container = self.unit.get_container("app")
+        # config changed
+        # relation created
+        # relation changed
 
 
 if __name__ == "__main__":

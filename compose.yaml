@@ -12,20 +12,20 @@ services:
     develop:
       watch:
         - action: sync
-          path: ./express-app/src/client
-          target: /code/src/client
+          path: ./express-app/app/src/client
+          target: /app/src/client
         - action: sync+restart
-          path: ./express-app/src/server
-          target: /code/src/server
+          path: ./express-app/app/src/server
+          target: /app/src/server
+        - action: sync+restart
+          path: ./express-app/app/index.html
+          target: /app/index.html
         - action: rebuild
-          path: ./express-app
+          path: ./express-app/app/
           include:
             - "*.json"
             - vite.config.ts
             - Dockerfile
-        - action: sync+restart
-          path: ./express-app/index.html
-          target: /code/index.html
 
   flask-app:
     build: ./flask-app
@@ -37,7 +37,7 @@ services:
       watch:
         - action: sync
           path: ./flask-app
-          target: /code
+          target: /app
         - action: rebuild
           path: ./flask-app
           include:
