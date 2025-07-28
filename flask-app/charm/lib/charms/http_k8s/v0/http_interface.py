@@ -28,9 +28,12 @@ LIBPATCH = 1
 
 
 logger = logging.getLogger()
-SERVICES_CONFIGURATION_KEY = "services"
-DEFAULT_HAPROXY_PORT = 80
 
+HTTP_INTERFACE_RELATION = "http"
+HTTP_INTERFACE_PORT = "80"
+
+PROVIDER_HOSTNAME_KEY = "hostname"
+PROVIDER_PORT_KEY = "port"
 
 class HTTPBackendAvailableEvent(RelationEvent):
     """Event representing that http data has been provided."""
@@ -110,15 +113,13 @@ class _IntegrationInterfaceBaseClass(Object):
         return self.charm.model.relations.get(self.relation_name, [])
 
     @property
-    def bind_address(self) -> str:
-        """Get Unit bind address.
+    def bind_service(self) -> str:
+        """Get unit bind k8s service name (needs CoreDNS to work properly).
 
         Returns:
-            The unit address, or an empty string if no address found.
+            The service name, which is the same as the app name
         """
-        if bind := self.model.get_binding("juju-info"):
-            return str(bind.network.bind_address)
-        return ""
+        return self.model.name
 
 
 class HTTPRequirer(_IntegrationInterfaceBaseClass):
@@ -130,20 +131,31 @@ class HTTPRequirer(_IntegrationInterfaceBaseClass):
 
     onHTTPEvents = HTTPRequirerEvents()
 
+    def __init__(self, charm: CharmBase, relation_name: str):
+        super().__init__(charm, relation_name)
+
     def _on_relation_joined(self, event: RelationJoinedEvent) -> None:
         """Handle relation-changed event.
 
         Args:
             event: relation-changed event.
         """
-        event.relation.data[self.charm.unit].update(
-            {
-                "public-address": self.bind_address,
-            }
-        )
+        provider_data = event.relation.data.get(event.relation.app)
+        if provider_data:
+            # update the databag of the unit that just received the event
+            # with the information of the provider hostname and port
+            event.relation.data[self.charm.unit].update(
+                {
+                    PROVIDER_HOSTNAME_KEY: provider_data[PROVIDER_HOSTNAME_KEY],
+                    PROVIDER_PORT_KEY: provider_data[PROVIDER_PORT_KEY]
+                }
+            )
 
     def _on_relation_changed(self, event: RelationChangedEvent) -> None:
         """Handle relation-changed event.
+        Is triggered always after a relation-joined event.
+        This emits the http_backend_available event that the charm code can
+        listen to and act upon.
 
         Args:
             event: relation-changed event.
@@ -166,79 +178,50 @@ class HTTPRequirer(_IntegrationInterfaceBaseClass):
             event.unit,
         )
 
-    def get_services(self) -> list:
-        # TODO: delete?
-        """Return the haproxy config for all services in the relation data.
-
-        Returns:
-            list: The list of haproxy config stanzas for all services in the relation data.
-        """
-        return []
-        # legacy.generate_service_config(self.get_services_definition())
-
-    def get_services_definition(self) -> dict:
-        # TODO: delete?
-        """Augment services_dict with service definitions from relation data.
-
-        Returns:
-            A dictionary containing the definition of all services.
-        """
-        relation_data = [
-            (unit, _load_relation_data(relation.data[unit]))
-            for relation in self.relations
-            for unit in relation.units
-        ]
-        return {}
-        # legacy.get_services_from_relation_data(relation_data)
-
 
 class HTTPProvider(_IntegrationInterfaceBaseClass):
     """HTTP interface provider class to be instantiated by the haproxy-operator charm."""
 
+    def __init__(
+        self,
+        charm: CharmBase,
+        relation_name = HTTP_INTERFACE_RELATION,
+        port = HTTP_INTERFACE_PORT
+    ):
+        super().__init__(charm, relation_name)
+        self.port = port
+
     def _on_relation_joined(self, event: RelationJoinedEvent) -> None:
+        """Handle relation joined event.
+        When a new unit joins the relation, the HTTPProvider writes in
+        the application databag its hostname and port.
+
+        Args:
+            event: relation-joined event.
+        """
+        if self.model.unit.is_leader():
+            event.relation.save(
+                {
+                    PROVIDER_HOSTNAME_KEY: self.bind_service,
+                    PROVIDER_PORT_KEY: self.port
+                },
+                self.charm.app
+            )
+
+    def _on_relation_changed(self, event: RelationChangedEvent) -> None:
         """Handle relation-changed event.
 
         Args:
             event: relation-changed event.
         """
-        event.relation.data[self.charm.unit].update(
-            {"hostname": self.bind_address, "port": f"{DEFAULT_HAPROXY_PORT}"}
-        )
-
-    # We add a placeholder implementation of this method because of parent class
-    def _on_relation_changed(self, event: RelationChangedEvent) -> None:
-        """Handle relation-changed event."""
         logger.debug(f"Nothing to do for relation-changed ({event.relation.name}).")
 
     def _on_relation_broken(self, event: RelationBrokenEvent) -> None:
         """Handle relation-broken event.
+        Empty the application databag.
 
         Args:
             event: relation-broken event.
         """
-        event.relation.data[self.charm.unit].clear()
-
-
-def _load_relation_data(relation_data_content: RelationDataContent) -> dict:
-    """Load relation data from the relation data bag.
-
-    Json loads all data and yaml loads the services definition.
-    Does not do data validation.
-
-    Args:
-        relation_data_content: Relation data from the databag.
-
-    Returns:
-        dict: Relation data in dict format.
-    """
-    relation_data = {}
-    try:
-        for key in relation_data_content:
-            try:
-                relation_data[key] = json.loads(relation_data_content[key])
-            except (json.decoder.JSONDecodeError, TypeError):
-                relation_data[key] = relation_data_content[key]
-    except ModelError:
-        pass
-
-    return relation_data
+        if self.model.unit.is_leader():
+            event.relation.save({}, self.charm.app)
