@@ -1,7 +1,7 @@
 # This file configures Charmcraft.
 # See https://canonical-charmcraft.readthedocs-hosted.com/stable/reference/files/charmcraft-yaml-file/ for guidance.
 
-name: express-charm-demo
+name: express-app
 
 type: charm
 

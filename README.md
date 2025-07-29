@@ -73,36 +73,35 @@ First of all you need to start a Multipass VM and you should set up a mounted di
 access this project inside the VM. You can do so with the following commands:
 
 ```sh
-multipass launch --cpus 4 --disk 50G --memory 4G --name charm-dev 24.04
-multipass mount --type=classic charm-dev . express-charm-demo
+multipass launch --cpus 4 --disk 60G --memory 4G --name charm-dev 24.04
+multipass mount --type=classic . charm-dev:express-charm-demo
 ```
 
 Once the machine is running you can SSH into it:
 
 ```sh
-multipass list
-# once charm-dev is in running state
 multipass shell charm-dev
+cd express-charm-demo
 ```
 
 Next you should set up the environment to be able to deploy the application.
 
 ```sh
-cd express-charm-demo/scripts
-./charmDev.sh
-./deployApp.sh
+./scripts/charmDev.sh
+./scripts/deployApp.sh
 ```
 
 And finally, if you modify anything in your application and want to deploy the
-newest changes, there is also a script for that:
+newest changes, just rerun the deploy script.
 
 ```sh
-cd express-charm-demo/scripts
-./refreshApp.sh
+./scripts/deployApp.sh
 ```
 
 To access through your browser the K8s environment running inside the VM you'll
-need to do
+need to do the next trick. The nginx-ingress-integrator is exposing the app at
+127.0.0.1:80, but this is all inside the Multipass VM, so you need to forward a
+port from your host to the VM and
 
 ### Tips and troubleshooting
 
@@ -135,4 +134,29 @@ snapcraft export-login ~/snapcraft-login
 export SNAPCRAFT_STORE_CREDENTIALS=$(cat ~/snapcraft-login)
 charmcraft login --export ~/charmcraft-login
 export CHARMCRAFT_AUTH=$(cat ~/charmcraft-login)
+```
+
+#### juju commands hang
+
+If you want to restart from scratch the juju environment (without re-creating the Multipass VM)
+you can run the following commands:
+
+```sh
+juju destroy-controller dev-controller --destroy-all-models --destroy-storage \
+  --force --no-wait --no-prompt
+juju bootstrap microk8s dev
+./scripts/deployApp.sh
+```
+
+One of the reasons for things starting to hang is if the VM runs out of space. If that's the
+case then the only option is to delete it and create a new one giving it more GB of disk.
+
+```sh
+# check how much disk is free
+df -h
+# if disk is almost full k8s automatically shuts down some pods and things start hanging
+# or failing
+# exit the ssh session inside the vm and run
+multipass delete --purge charm-dev
+# then go back to the start and recreate the vm with more disk space
 ```

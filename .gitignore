@@ -63,6 +63,7 @@ env/
 env[23]/
 virtual/
 venv/
+.ruff_cache
 
 # dotrun snap files
 .dotrun.json
