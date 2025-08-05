@@ -9,7 +9,7 @@ import typing
 
 import ops
 import paas_charm.flask
-import lib.charms.http_k8s.v0.http_interface as http_interface
+import charms.http_k8s.v0.http_interface as http_interface
 
 logger = logging.getLogger(__name__)
 

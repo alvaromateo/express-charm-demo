@@ -82,6 +82,10 @@ charmcraft pack
 cd ../..
 echo "Left flask-app/charm"
 
+# Check if apps are already deployed
+flask_app_deployed=$(juju status --format yaml | yq --arg CHARM_NAME ${flask_charm_name} '.applications.[] | select(."charm-name" == $CHARM_NAME) | ."charm-name"' | wc -l)
+echo ${flask_app_deployed}
+
 # Deploy express-app
 juju deploy \
   ./express-app/charm/${express_charm_name}_${architecture}.charm ${express_charm_name} \

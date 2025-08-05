@@ -8,8 +8,8 @@ import logging
 import typing
 
 import ops
-
 import paas_charm.expressjs
+import charms.http_k8s.v0.http_interface as http_interface
 
 logger = logging.getLogger(__name__)
 
