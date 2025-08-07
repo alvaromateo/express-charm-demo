@@ -4,13 +4,12 @@
 """The haproxy http interface module."""
 
 import abc
-import json
 import logging
 
 from ops import RelationBrokenEvent, RelationChangedEvent, RelationJoinedEvent
 from ops.charm import CharmBase, CharmEvents, RelationEvent
 from ops.framework import EventSource, Object
-from ops.model import ModelError, Relation, RelationDataContent
+from ops.model import Relation
 
 
 ### THESE 3 VARIABLES ARE NEEDED TO BE ABLE TO RUN "charmcraft fetch-libs"

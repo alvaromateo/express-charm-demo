@@ -25,7 +25,7 @@ class FlaskAppCharm(paas_charm.flask.Charm):
         """
         super().__init__(*args)
 
-        self.httpProvider = http_interface.HTTPProvider(self, "backend", "80");
+        self.httpProvider = http_interface.HTTPProvider(self, "flask-backend", "80");
 
 
 if __name__ == "__main__":

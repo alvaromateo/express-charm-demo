@@ -37,5 +37,6 @@ sudo microk8s status --wait-ready
 sudo snap install juju --channel 3.6/stable
 mkdir -p ~/.local/share
 juju bootstrap microk8s dev
+juju switch dev
 
 EONG

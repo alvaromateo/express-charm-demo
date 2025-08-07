@@ -87,15 +87,17 @@ cd express-charm-demo
 Next you should set up the environment to be able to deploy the application.
 
 ```sh
-./scripts/charmDev.sh
-./scripts/deployApp.sh
+./scripts/setup.sh
+./scripts/build.sh
+./scripts/deploy.sh
 ```
 
 And finally, if you modify anything in your application and want to deploy the
 newest changes, just rerun the deploy script.
 
 ```sh
-./scripts/deployApp.sh
+./scripts/build.sh
+./scripts/deploy.sh
 ```
 
 To access through your browser the K8s environment running inside the VM you'll
