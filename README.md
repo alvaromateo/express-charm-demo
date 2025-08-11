@@ -88,6 +88,8 @@ Next you should set up the environment to be able to deploy the application.
 
 ```sh
 ./scripts/setup.sh
+# restart the shell or run
+newgrp snap_microk8s
 ./scripts/build.sh
 ./scripts/deploy.sh
 ```
@@ -162,3 +164,13 @@ df -h
 multipass delete --purge charm-dev
 # then go back to the start and recreate the vm with more disk space
 ```
+
+#### juju status TLS error
+
+If you get an error similar to the following:
+```
+ERROR starting proxy for api connection: connecting k8s proxy: forwarding ports: error upgrading connection: error dialing backend: tls: failed to verify certificate: x509: certificate is valid for 192.168.64.47, 10.184.187.1, fdf7:7e01:f4fc:5f04:5054:ff:feca:748e, fd42:bb56:e08e:aabb::1, not 192.168.65.2
+```
+
+This happens because when multipass is restarted, the VM  gets a different IP address than previously.
+The only solution I found is to delete the multipass VM and start all over.

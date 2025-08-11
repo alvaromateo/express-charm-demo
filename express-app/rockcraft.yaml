@@ -2,8 +2,8 @@ name: express-app
 # see https://documentation.ubuntu.com/rockcraft/en/latest/explanation/bases/
 # for more information about bases and using 'bare' bases for chiselled rocks
 base: bare # as an alternative, a ubuntu base can be used
-build-base: ubuntu@24.04 # build-base is required when the base is bare
-version: "0.5" # just for humans. Semantic versioning is recommended
+build-base: ubuntu@22.04 # build-base is required when the base is bare
+version: "0.11" # just for humans. Semantic versioning is recommended
 summary: A summary of your ExpresssJS application # 79 char long summary
 description: |
   This is express-app's description. You have a paragraph or two to tell the
@@ -21,12 +21,27 @@ platforms:
 extensions:
   - expressjs-framework
 
+# For some reason in macOS the extension doesn't work well and we need to
+# specify the node snap in order to be able to run the build (otherwise it's not found).
 parts:
-  app:
-    plugin: nil
-    stage-packages:
-      - nodejs
-      - npm
   expressjs-framework/install-app:
     npm-node-version: lts/jod
     npm-include-node: True
+    build-snaps:
+      - node/22/stable
+    override-build: |
+      rm -rf node_modules
+      # We need the dev dependencies to build the app
+      npm install --include=dev
+      npm run build
+
+      craftctl default
+
+      # We need to copy the built files to the install directory
+      mkdir -p ${CRAFT_PART_INSTALL}/lib/node_modules/express-app/dist
+      cp -r dist/. ${CRAFT_PART_INSTALL}/lib/node_modules/express-app/dist
+      npm config set script-shell=bash --location project
+      cp ${CRAFT_PART_BUILD}/.npmrc ${CRAFT_PART_INSTALL}/lib/node_modules/express-app/.npmrc
+      chown -R 584792:584792 ${CRAFT_PART_INSTALL}/lib/node_modules/express-app
+      ln -s /lib/node_modules/express-app ${CRAFT_PART_INSTALL}/app
+      chown -R 584792:584792 ${CRAFT_PART_INSTALL}/app

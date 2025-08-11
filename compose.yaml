@@ -2,13 +2,13 @@ services:
   express-app:
     build: ./express-app
     ports:
-      - "3000:3000"
+      - "3010:3010"
       - "9229:9229"
       - "24678:24678"
     environment:
-      PORT: 3000
+      PORT: 3010
       BE_HOST: flask-app
-      BE_PORT: 5000
+      BE_PORT: 5010
     develop:
       watch:
         - action: sync
@@ -30,9 +30,9 @@ services:
   flask-app:
     build: ./flask-app
     ports:
-      - "5000:5000"
+      - "5010:5010"
     environment:
-      PORT: 5000
+      PORT: 5010
     develop:
       watch:
         - action: sync

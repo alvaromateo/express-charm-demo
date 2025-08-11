@@ -15,4 +15,4 @@ COPY --chown=app:app . ./
 
 # TODO: add possibility to attach debugger
 
-CMD ["python3", "-m", "flask", "run", "--debug"]
+CMD ["python3", "app.py"]

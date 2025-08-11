@@ -32,8 +32,9 @@ if [ $express_app_deployed -eq 1 ]; then
     --resource app-image=localhost:32000/${express_rock_name}:${version_express}
 else
   # app is not deployed
-  juju deploy ${express_charm_name} \
-    --path ./express-app/charm/${express_charm_name}_${architecture}.charm \
+  juju deploy \
+    ./express-app/charm/${express_charm_name}_${architecture}.charm \
+    ${express_charm_name} \
     --resource app-image=localhost:32000/${express_rock_name}:${version_express}
 fi
 
@@ -44,7 +45,8 @@ if [ $flask_app_deployed -eq 1 ]; then
     --resource flask-app-image=localhost:32000/${flask_rock_name}:${version_flask}
 else
   # app is not deployed
-  juju deploy ${flask_charm_name} \
-    --path ./flask-app/charm/${flask_charm_name}_${architecture}.charm \
+  juju deploy \
+    ./flask-app/charm/${flask_charm_name}_${architecture}.charm \
+    ${flask_charm_name} \
     --resource flask-app-image=localhost:32000/${flask_rock_name}:${version_flask}
 fi

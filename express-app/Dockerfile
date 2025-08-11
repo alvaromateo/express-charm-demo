@@ -5,7 +5,7 @@ USER app
 
 WORKDIR /app
 
-COPY --chown=app:app app/package.json app/package-lock.json ./
+COPY --chown=app:app app/*.json ./
 RUN npm install
 
 COPY --chown=app:app app ./
