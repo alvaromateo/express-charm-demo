@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import './App.css'
-import Head from './Head'
-import Body from './Body'
+import Head from '../head/Head'
+import Body from '../body/Body'
 
 function App() {
   return (

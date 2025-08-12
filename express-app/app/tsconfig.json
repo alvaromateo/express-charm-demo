@@ -21,6 +21,6 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src/client", "src/client/entry-server.tsx"],
+  "include": ["src/client"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

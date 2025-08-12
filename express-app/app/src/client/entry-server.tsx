@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { renderToString } from "react-dom/server";
-import Head from "./Head";
-import Body from "./Body";
+import Head from "./components/head/Head";
+import Body from "./components/body/Body";
 
 export type RenderOutput = {
   head: string;

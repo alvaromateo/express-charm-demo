@@ -6,7 +6,7 @@ import apiRoute from "./routes/api";
 
 // Constants
 const isProduction = process.env.NODE_ENV === "production";
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3010;
 const base = process.env.BASE || "/";
 
 // Cache production assets

@@ -11,7 +11,7 @@ ENV FLASK_RUN_HOST=0.0.0.0
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
-COPY --chown=app:app . ./
+COPY --chown=app:app app.py ./
 
 # TODO: add possibility to attach debugger
 
