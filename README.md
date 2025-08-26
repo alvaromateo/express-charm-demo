@@ -110,10 +110,18 @@ newest changes, just rerun the deploy script.
 ./scripts/deploy.sh
 ```
 
+### Access the website
+
 To access through your browser the K8s environment running inside the VM you'll
 need to do the next trick. The nginx-ingress-integrator is exposing the app at
-127.0.0.1:80, but this is all inside the Multipass VM, so you need to forward a
-port from your host to the VM and
+127.0.0.1:80, but this is all inside the Multipass VM, so you need to add the
+IP of the Multipass VM to your /etc/hosts.
+
+If you have 'jq' installed you can run on your host:
+```sh
+export VM_IP=`multipass list --format json | jq '.list.[] | select(.name == "charm-dev") | .ipv4.[0]' | tr -d \"`
+echo "${VM_IP} express-app.local" | sudo tee -a /etc/hosts
+```
 
 ### Tips and troubleshooting
 

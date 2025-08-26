@@ -48,16 +48,12 @@ class ExpressApp(App):
         env = super().gen_environment()
         # add environment variables for HTTP flask-backend
         logger.info("Generating environment for ExpressApp")
-        http_relations = self._http_integration.relations
-        if http_relations:
-            for relation in http_relations:
-                http_relation_data = relation.data.get(self._http_integration.model.unit)
-                if http_relation_data:
-                    prefix = BACKEND_RELATION_NAME.replace('-', '_').upper()
-                    for k, v in http_relation_data.items():
-                        logger.info(f"k = {k}, v = {v}")
-                    #env[f"{prefix}_URL"] = http_relation_data[http_interface.PROVIDER_URL_KEY]
-                    #logger.info(f"Added {prefix}_URL = {http_relation_data[http_interface.PROVIDER_URL_KEY]}")
+        http_relation_data = self._http_integration.get_relation_data()
+        if http_relation_data:
+            prefix = BACKEND_RELATION_NAME.replace('-', '_').upper()
+            logger.info(f"url = {http_relation_data.url}")
+            #env[f"{prefix}_URL"] = http_relation_data[http_interface.PROVIDER_URL_KEY]
+            #logger.info(f"Added {prefix}_URL = {http_relation_data[http_interface.PROVIDER_URL_KEY]}")
         return env
 
 
@@ -72,8 +68,8 @@ class ExpressCharmDemoCharm(paas_charm.expressjs.Charm):
 
         self._httpRequirer = http_interface.HTTPRequirer(self, BACKEND_RELATION_NAME)
 
-        self.framework.observe(self._httpRequirer.onHTTPEvents.http_backend_available, self.restart)
-        self.framework.observe(self._httpRequirer.onHTTPEvents.http_backend_removed, self.restart)
+        self.framework.observe(self._httpRequirer.on.http_backend_available, self.restart)
+        self.framework.observe(self._httpRequirer.on.http_backend_removed, self.restart)
 
     def _create_app(self) -> App:
         """Build a App instance.

@@ -5,12 +5,12 @@
 
 import abc
 import logging
-from typing import List
+import typing
+from pydantic import BaseModel, ValidationError
 
-from ops import RelationBrokenEvent, RelationChangedEvent, RelationJoinedEvent
+from ops import Relation, RelationBrokenEvent, RelationChangedEvent, RelationJoinedEvent
 from ops.charm import CharmBase, CharmEvents, RelationEvent
 from ops.framework import EventSource, Object
-from ops.model import Relation
 
 
 ### THESE 3 VARIABLES ARE NEEDED TO BE ABLE TO RUN "charmcraft fetch-libs"
@@ -35,6 +35,12 @@ PROVIDER_URL_KEY = "url"
 class HTTPBackendAvailableEvent(RelationEvent):
     """Event representing that http data has been provided."""
 
+    @property
+    def url(self) -> str:
+        """Fetch the HTTP url from the relation."""
+        assert self.relation.app
+        return typing.cast(str, self.relation.data[self.relation.app].get("url"))
+
 
 class HTTPBackendRemovedEvent(RelationEvent):
     """Event representing that http data has been removed."""
@@ -50,6 +56,26 @@ class HTTPRequirerEvents(CharmEvents):
 
     http_backend_available = EventSource(HTTPBackendAvailableEvent)
     http_backend_removed = EventSource(HTTPBackendRemovedEvent)
+
+
+class HttpRelationData(BaseModel):
+    """Represent the relation data.
+
+    Attributes:
+        url: The URL where the HTTP endpoint is located.
+    """
+
+    url: str
+
+    def to_relation_data(self) -> typing.Dict[str, str]:
+        """Convert an instance of HttpRelationData to the relation representation.
+
+        Returns:
+            Dict containing the representation.
+        """
+        return {
+            "url": str(self.url),
+        }
 
 
 class _IntegrationInterfaceBaseClass(Object):
@@ -70,6 +96,7 @@ class _IntegrationInterfaceBaseClass(Object):
         super().__init__(charm, relation_name)
 
         observe = self.framework.observe
+        self.charm = charm
         self.relation_name = relation_name
 
         observe(charm.on[relation_name].relation_joined, self._on_relation_joined)
@@ -103,14 +130,53 @@ class _IntegrationInterfaceBaseClass(Object):
         """
         raise NotImplementedError
 
-    @property
-    def relations(self) -> List[Relation] | None:
-        """The Relation instance associated with the charm."""
-        relations_list = self.model.relations.get(self.relation_name, [])
-        if not relations_list:
+    def get_relation_data(self) -> typing.Optional[HttpRelationData]:
+        """Retrieve the relation data.
+
+        Returns:
+            HttpRelationData: the relation data.
+        """
+        relation = self.model.get_relation(self.relation_name)
+        return self._get_relation_data_from_relation(relation) if relation else None
+
+    def _get_relation_data_from_relation(
+        self, relation: Relation
+    ) -> typing.Optional[HttpRelationData]:
+        """Retrieve the relation data.
+
+        Args:
+            relation: the relation to retrieve the data from.
+
+        Returns:
+            HttpRelationData: the relation data.
+        """
+        assert relation.app
+        relation_data = relation.data[relation.app]
+        if not relation_data:
+            logger.warning(f"relation data for {relation.name} not found")
             return None
-        # there should be only one relation for a given name
-        return relations_list
+
+        return HttpRelationData(
+            url=typing.cast(str, relation_data.get("url")),
+        )
+
+    def _is_relation_data_valid(self, relation: Relation) -> bool:
+        """Validate the relation data.
+
+        Args:
+            relation: the relation to validate.
+
+        Returns:
+            true: if the relation data is valid.
+        """
+        try:
+            _ = self._get_relation_data_from_relation(relation)
+            return True
+        except ValidationError as ex:
+            error_fields = [error["loc"] for error in ex.errors()]
+            error_field_str = " ".join(f"{f}" for f in error_fields)
+            logger.warning("Error validation the relation data %s", error_field_str)
+            return False
 
 
 class HTTPRequirer(_IntegrationInterfaceBaseClass):
@@ -120,7 +186,7 @@ class HTTPRequirer(_IntegrationInterfaceBaseClass):
         on: Custom events that are used to notify the charm using the provider.
     """
 
-    onHTTPEvents = HTTPRequirerEvents()
+    on = HTTPRequirerEvents()
 
     def __init__(self, charm: CharmBase, relation_name: str):
         super().__init__(charm, relation_name)
@@ -144,30 +210,12 @@ class HTTPRequirer(_IntegrationInterfaceBaseClass):
         Args:
             event: relation-changed event.
         """
-        if not self.relations:
-            logger.warning(f"{self.relation_name} - Relation could not be retrieved")
-            return
 
-        if self.relations:
-            for relation in self.relations:
-                provider_data = relation.data.get(event.relation.app)
-                # update the databag of the unit that just received the event
-                # with the information of the provider hostname and port
-                relation.save(
-                    {
-                        PROVIDER_URL_KEY: provider_data[PROVIDER_URL_KEY]
-                    },
-                    self.model.unit
-                )
-                logger.info("Provider data:")
-                for k, v in provider_data.items():
-                    logger.info(f"k = {k}, v = {v}")
-
-        self.onHTTPEvents.http_backend_available.emit(
-            event.relation,
-            event.app,
-            event.unit,
-        )
+        assert event.relation.app
+        relation_data = event.relation.data[event.relation.app]
+        if relation_data:
+            if self._is_relation_data_valid(event.relation):
+                self.on.http_backend_available.emit(event.relation, app=event.app, unit=event.unit)
 
     def _on_relation_broken(self, event: RelationBrokenEvent) -> None:
         """Handle relation-broken event.
@@ -175,13 +223,10 @@ class HTTPRequirer(_IntegrationInterfaceBaseClass):
         Args:
             event: relation-broken event.
         """
-        if self.relations:
-            for relation in self.relations:
-                relation.save({}, self.model.unit)
-        self.onHTTPEvents.http_backend_removed.emit(
+        self.on.http_backend_removed.emit(
             event.relation,
-            event.app,
-            event.unit,
+            app=event.app,
+            unit=event.unit,
         )
 
 
@@ -197,6 +242,14 @@ class HTTPProvider(_IntegrationInterfaceBaseClass):
         super().__init__(charm, relation_name)
         self.url = url
 
+    def _update_relation_data(self, event: RelationEvent) -> None:
+        if self.model.unit.is_leader():
+            relation_data = HttpRelationData(url=self.url).to_relation_data()
+            event.relation.data[self.charm.model.app].update(relation_data)
+            logger.info(f"{event.relation.name} - Add to app data {PROVIDER_URL_KEY}: {self.url}")
+        else:
+            logger.warning(f"{self.relation_name} - Leader = {self.model.unit.is_leader()}, Relations = {self.relations}")
+
     def _on_relation_joined(self, event: RelationJoinedEvent) -> None:
         """Handle relation joined event.
         When a new unit joins the relation, the HTTPProvider writes in
@@ -205,17 +258,7 @@ class HTTPProvider(_IntegrationInterfaceBaseClass):
         Args:
             event: relation-joined event.
         """
-        if self.model.unit.is_leader() and self.relations:
-            for relation in self.relations:
-                relation.save(
-                    {
-                        PROVIDER_URL_KEY: self.url,
-                    },
-                    self.model.app
-                )
-                logger.info(f"{relation.name} - Add to app data {PROVIDER_URL_KEY}: {self.url}")
-        else:
-            logger.warning(f"{self.relation_name} - Leader = {self.model.unit.is_leader()}, Relations = {self.relations}")
+        self._update_relation_data(event)
 
     def _on_relation_changed(self, event: RelationChangedEvent) -> None:
         """Handle relation-changed event.
@@ -225,17 +268,7 @@ class HTTPProvider(_IntegrationInterfaceBaseClass):
         Args:
             event: relation-changed event.
         """
-        if self.model.unit.is_leader() and self.relations:
-            for relation in self.relations:
-                relation.save(
-                    {
-                        PROVIDER_URL_KEY: self.url,
-                    },
-                    self.model.app
-                )
-                logger.info(f"{relation.name} - Add to app data {PROVIDER_URL_KEY}: {self.url}")
-        else:
-            logger.warning(f"{self.relation_name} - Leader = {self.model.unit.is_leader()}, Relations = {self.relations}")
+        self._update_relation_data(event)
 
     def _on_relation_broken(self, event: RelationBrokenEvent) -> None:
         """Handle relation-broken event.
@@ -244,7 +277,7 @@ class HTTPProvider(_IntegrationInterfaceBaseClass):
         Args:
             event: relation-broken event.
         """
-        if self.model.unit.is_leader() and self.relations:
-            for relation in self.relations:
-                relation.save({}, self.model.app)
-                logger.info(f"Removed {event.relation.name} data for app")
+        if self.model.unit.is_leader():
+            relation_data = HttpRelationData(url="").to_relation_data()
+            event.relation.data[self.charm.model.app].update(relation_data)
+            logger.info(f"Removed {event.relation.name} data for app")
