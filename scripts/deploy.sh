@@ -14,6 +14,17 @@ fi
 
 source scripts/commonVars.sh
 
+# Set model if needed
+juju_model=$(juju models --format yaml | yq '.models.[] | select(."short-name" == "express-flask") | ."short-name"')
+if [ -z ${juju_model} ]; then
+  echo "Adding new model..."
+  KUBECONFIG=~/microk8s.yaml juju add-k8s mk8s --client
+  KUBECONFIG=~/microk8s.yaml juju add-k8s mk8s --controller dev
+  juju add-model express-flask mk8s
+  juju switch express-flask
+  juju set-model-constraints -m express-flask arch=${architecture}
+fi
+
 # Check if apps are already deployed
 express_app_deployed=`juju status --format yaml \
   | yq --arg CHARM_NAME ${express_charm_name} \

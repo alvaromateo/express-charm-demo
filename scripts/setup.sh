@@ -33,10 +33,14 @@ sudo microk8s enable ingress
 
 sudo microk8s status --wait-ready
 
+# export kubeconfig
+microk8s config > ~/microk8s.yaml
+
 # juju
 sudo snap install juju --channel 3.6/stable
 mkdir -p ~/.local/share
-juju bootstrap microk8s dev
+
+juju bootstrap localhost dev
 juju switch dev
 
 EONG

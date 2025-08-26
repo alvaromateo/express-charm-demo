@@ -1,5 +1,7 @@
-import { StrictMode } from "react";
-import { renderToString } from "react-dom/server";
+import { JSX, StrictMode } from "react";
+import { renderToPipeableStream } from "react-dom/server";
+import { Writable } from "node:stream";
+
 import Head from "./components/head/Head";
 import Body from "./components/body/Body";
 
@@ -8,14 +10,38 @@ export type RenderOutput = {
   body: string;
 };
 
-export function render(_url: string): RenderOutput {
+async function renderToStringAsync(jsx: JSX.Element): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let html = "";
+    const writable = new Writable({
+      write(chunk, _encoding, callback) {
+        html += chunk.toString();
+        callback();
+      },
+    });
+
+    const { pipe } = renderToPipeableStream(jsx, {
+      onAllReady() {
+        pipe(writable);
+      },
+      onError(err) {
+        reject(err);
+      },
+    });
+
+    writable.on("finish", () => resolve(html));
+    writable.on("error", reject);
+  });
+}
+
+export async function render(_url: string): Promise<RenderOutput> {
   return {
-    head: renderToString(
+    head: await renderToStringAsync(
       <StrictMode>
         <Head />
       </StrictMode>
     ),
-    body: renderToString(
+    body: await renderToStringAsync(
       <StrictMode>
         <Body />
       </StrictMode>

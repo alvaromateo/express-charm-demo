@@ -17,14 +17,6 @@ source scripts/commonVars.sh
 export ROCKCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS=True
 export CHARMCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS=True
 
-# Set model if needed
-juju_model=$(juju models --format yaml | yq '.models.[] | select(."short-name" == "express-flask") | ."short-name"')
-if [ -z ${juju_model} ]; then
-  echo "Adding new model..."
-  juju add-model express-flask
-  juju set-model-constraints -m express-flask arch=${architecture}
-fi
-
 
 # Create express-app rock
 cd express-app

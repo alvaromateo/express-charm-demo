@@ -73,8 +73,15 @@ First of all you need to start a Multipass VM and you should set up a mounted di
 access this project inside the VM. You can do so with the following commands:
 
 ```sh
-multipass launch --cpus 4 --disk 60G --memory 4G --name charm-dev 24.04
+multipass launch --cpus 4 --disk 40G --memory 4G --name charm-dev 24.04
 multipass mount --type=classic . charm-dev:express-charm-demo
+```
+
+For macOS users the first command above changes a bit.
+```sh
+multipass networks
+# attach the VM to the network you use so the k8s pods get internet access
+multipass launch --cpus 4 --disk 40G --memory 4G --name charm-dev --network en0 24.04
 ```
 
 Once the machine is running you can SSH into it:
@@ -92,6 +99,7 @@ Next you should set up the environment to be able to deploy the application.
 newgrp snap_microk8s
 ./scripts/build.sh
 ./scripts/deploy.sh
+./scripts/setRelations.sh
 ```
 
 And finally, if you modify anything in your application and want to deploy the

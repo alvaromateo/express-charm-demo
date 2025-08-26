@@ -5,6 +5,7 @@
 
 import abc
 import logging
+from typing import List
 
 from ops import RelationBrokenEvent, RelationChangedEvent, RelationJoinedEvent
 from ops.charm import CharmBase, CharmEvents, RelationEvent
@@ -29,10 +30,7 @@ LIBPATCH = 1
 logger = logging.getLogger()
 
 HTTP_INTERFACE_RELATION = "http"
-HTTP_INTERFACE_PORT = "80"
-
-PROVIDER_HOSTNAME_KEY = "hostname"
-PROVIDER_PORT_KEY = "port"
+PROVIDER_URL_KEY = "url"
 
 class HTTPBackendAvailableEvent(RelationEvent):
     """Event representing that http data has been provided."""
@@ -72,7 +70,6 @@ class _IntegrationInterfaceBaseClass(Object):
         super().__init__(charm, relation_name)
 
         observe = self.framework.observe
-        self.charm: CharmBase = charm
         self.relation_name = relation_name
 
         observe(charm.on[relation_name].relation_joined, self._on_relation_joined)
@@ -107,18 +104,13 @@ class _IntegrationInterfaceBaseClass(Object):
         raise NotImplementedError
 
     @property
-    def relations(self) -> list[Relation]:
-        """The list of Relation instances associated with the charm."""
-        return self.charm.model.relations.get(self.relation_name, [])
-
-    @property
-    def bind_service(self) -> str:
-        """Get unit bind k8s service name (needs CoreDNS to work properly).
-
-        Returns:
-            The service name, which is the same as the app name
-        """
-        return self.model.name
+    def relations(self) -> List[Relation] | None:
+        """The Relation instance associated with the charm."""
+        relations_list = self.model.relations.get(self.relation_name, [])
+        if not relations_list:
+            return None
+        # there should be only one relation for a given name
+        return relations_list
 
 
 class HTTPRequirer(_IntegrationInterfaceBaseClass):
@@ -134,21 +126,14 @@ class HTTPRequirer(_IntegrationInterfaceBaseClass):
         super().__init__(charm, relation_name)
 
     def _on_relation_joined(self, event: RelationJoinedEvent) -> None:
-        """Handle relation-changed event.
+        """Handle relation-joined event.
 
         Args:
-            event: relation-changed event.
+            event: relation-joined event.
         """
-        provider_data = event.relation.data.get(event.relation.app)
-        if provider_data:
-            # update the databag of the unit that just received the event
-            # with the information of the provider hostname and port
-            event.relation.data[self.charm.unit].update(
-                {
-                    PROVIDER_HOSTNAME_KEY: provider_data[PROVIDER_HOSTNAME_KEY],
-                    PROVIDER_PORT_KEY: provider_data[PROVIDER_PORT_KEY]
-                }
-            )
+        logger.info(f"{event.relation.name} relation joined")
+        # here we do nothing because after relation-joined there's always a
+        # relation-changed event, where we will do the processing
 
     def _on_relation_changed(self, event: RelationChangedEvent) -> None:
         """Handle relation-changed event.
@@ -159,6 +144,25 @@ class HTTPRequirer(_IntegrationInterfaceBaseClass):
         Args:
             event: relation-changed event.
         """
+        if not self.relations:
+            logger.warning(f"{self.relation_name} - Relation could not be retrieved")
+            return
+
+        if self.relations:
+            for relation in self.relations:
+                provider_data = relation.data.get(event.relation.app)
+                # update the databag of the unit that just received the event
+                # with the information of the provider hostname and port
+                relation.save(
+                    {
+                        PROVIDER_URL_KEY: provider_data[PROVIDER_URL_KEY]
+                    },
+                    self.model.unit
+                )
+                logger.info("Provider data:")
+                for k, v in provider_data.items():
+                    logger.info(f"k = {k}, v = {v}")
+
         self.onHTTPEvents.http_backend_available.emit(
             event.relation,
             event.app,
@@ -171,6 +175,9 @@ class HTTPRequirer(_IntegrationInterfaceBaseClass):
         Args:
             event: relation-broken event.
         """
+        if self.relations:
+            for relation in self.relations:
+                relation.save({}, self.model.unit)
         self.onHTTPEvents.http_backend_removed.emit(
             event.relation,
             event.app,
@@ -184,11 +191,11 @@ class HTTPProvider(_IntegrationInterfaceBaseClass):
     def __init__(
         self,
         charm: CharmBase,
+        url,
         relation_name = HTTP_INTERFACE_RELATION,
-        port = HTTP_INTERFACE_PORT
     ):
         super().__init__(charm, relation_name)
-        self.port = port
+        self.url = url
 
     def _on_relation_joined(self, event: RelationJoinedEvent) -> None:
         """Handle relation joined event.
@@ -198,22 +205,37 @@ class HTTPProvider(_IntegrationInterfaceBaseClass):
         Args:
             event: relation-joined event.
         """
-        if self.model.unit.is_leader():
-            event.relation.save(
-                {
-                    PROVIDER_HOSTNAME_KEY: self.bind_service,
-                    PROVIDER_PORT_KEY: self.port
-                },
-                self.charm.app
-            )
+        if self.model.unit.is_leader() and self.relations:
+            for relation in self.relations:
+                relation.save(
+                    {
+                        PROVIDER_URL_KEY: self.url,
+                    },
+                    self.model.app
+                )
+                logger.info(f"{relation.name} - Add to app data {PROVIDER_URL_KEY}: {self.url}")
+        else:
+            logger.warning(f"{self.relation_name} - Leader = {self.model.unit.is_leader()}, Relations = {self.relations}")
 
     def _on_relation_changed(self, event: RelationChangedEvent) -> None:
         """Handle relation-changed event.
+        When the relation changes, the HTTPProvider writes in
+        the application databag its hostname and port.
 
         Args:
             event: relation-changed event.
         """
-        logger.debug(f"Nothing to do for relation-changed ({event.relation.name}).")
+        if self.model.unit.is_leader() and self.relations:
+            for relation in self.relations:
+                relation.save(
+                    {
+                        PROVIDER_URL_KEY: self.url,
+                    },
+                    self.model.app
+                )
+                logger.info(f"{relation.name} - Add to app data {PROVIDER_URL_KEY}: {self.url}")
+        else:
+            logger.warning(f"{self.relation_name} - Leader = {self.model.unit.is_leader()}, Relations = {self.relations}")
 
     def _on_relation_broken(self, event: RelationBrokenEvent) -> None:
         """Handle relation-broken event.
@@ -222,5 +244,7 @@ class HTTPProvider(_IntegrationInterfaceBaseClass):
         Args:
             event: relation-broken event.
         """
-        if self.model.unit.is_leader():
-            event.relation.save({}, self.charm.app)
+        if self.model.unit.is_leader() and self.relations:
+            for relation in self.relations:
+                relation.save({}, self.model.app)
+                logger.info(f"Removed {event.relation.name} data for app")
