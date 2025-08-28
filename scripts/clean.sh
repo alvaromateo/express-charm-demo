@@ -12,6 +12,12 @@ if [[ ! $(pwd) =~ ${project_root_regex} ]]; then
   exit 1
 fi
 
+export ROCKCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS=True
+export CHARMCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS=True
+
+cd express-app && rockcraft clean && cd ..
+cd flask-app && rockcraft clean && cd ..
+
 rm express-app/*.rock
 rm express-app/charm/*.charm
 

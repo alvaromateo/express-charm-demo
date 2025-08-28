@@ -101,6 +101,8 @@ And finally, if you modify anything in your application and want to deploy the
 newest changes, just rerun the deploy script.
 
 ```sh
+# need to clean if the changes are not applied
+./scripts/clean.sh
 ./scripts/build.sh
 ./scripts/deploy.sh
 ```

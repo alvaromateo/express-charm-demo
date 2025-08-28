@@ -3,7 +3,7 @@ name: express-app
 # for more information about bases and using 'bare' bases for chiselled rocks
 base: bare # as an alternative, a ubuntu base can be used
 build-base: ubuntu@22.04 # build-base is required when the base is bare
-version: "0.13" # just for humans. Semantic versioning is recommended
+version: "1.0" # just for humans. Semantic versioning is recommended
 summary: A summary of your ExpresssJS application # 79 char long summary
 description: |
   This is express-app's description. You have a paragraph or two to tell the
@@ -24,6 +24,10 @@ extensions:
 # For some reason in macOS the extension doesn't work well and we need to
 # specify the node snap in order to be able to run the build (otherwise it's not found).
 parts:
+  busybox:
+    plugin: nil
+    stage-packages:
+      - busybox
   expressjs-framework/install-app:
     npm-node-version: lts/jod
     npm-include-node: True

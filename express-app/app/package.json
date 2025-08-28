@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx --tsconfig tsconfig.node.json src/server/server.ts",
     "dev:debug": "tsx --tsconfig tsconfig.node.json --inspect-brk=0.0.0.0:9229 src/server/server.ts",
-    "build": "npm run build:client && npm run build:server",
+    "build": "rm -rf dist/ && npm run build:client && npm run build:server",
     "build:client": "vite build --outDir dist/client",
     "build:server": "vite build --ssr src/server/server.ts --outDir dist/server",
     "preview": "cross-env NODE_ENV=production tsx --tsconfig tsconfig.node.json src/server/server.ts",

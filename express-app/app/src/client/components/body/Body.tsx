@@ -2,13 +2,9 @@ import { ApiSSRResponse } from "../../types/apiResponseTypes";
 import Counter from "../counter/Counter";
 import ServerMessage from "../serverMessage/ServerMessage";
 
-async function Body() {
-  const message = await fetch(
-    `http://${process.env.FLASK_BACKEND_HOST}:${process.env.FLASK_BACKEND_PORT}/api/ssr`
-  )
-    .then((response) => response.json())
-    .then((data) => (data as ApiSSRResponse).message);
+import "./Body.css";
 
+function Body({ data }: { data: ApiSSRResponse }) {
   return (
     <>
       <div>
@@ -26,7 +22,7 @@ async function Body() {
       </p>
       <div id="ssr-rendered">
         <h3>SSR rendered message</h3>
-        <p id="flask-output">{message}</p>
+        <p id="flask-output">{data.message}</p>
       </div>
       <ServerMessage />
     </>

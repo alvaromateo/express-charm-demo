@@ -9,9 +9,8 @@ const isProduction = process.env.NODE_ENV === "production";
 const port = process.env.PORT || 3010;
 const base = process.env.BASE || "/";
 
-// Cache production assets
 const templateHtml = await fs.readFile(
-  path.join(process.cwd(), "index.html"),
+  path.join(process.cwd(), "dist", "client", "index.html"),
   "utf-8"
 );
 

@@ -1,7 +1,7 @@
 import { Router } from "express";
 
-const apiHost = process.env.BE_HOST || "flask-app";
-const apiPort = process.env.BE_PORT || 5000;
+const apiHost = process.env.FLASK_BACKEND_HOST || "flask-app";
+const apiPort = process.env.FLASK_BACKEND_PORT || 5010;
 
 const router = Router();
 

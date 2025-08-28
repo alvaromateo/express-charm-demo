@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 
 function Counter() {
@@ -8,11 +6,8 @@ function Counter() {
   return (
     <div className="card">
       <button onClick={() => setCount((count) => count + 1)}>
-        count is {count}
+        Count is {count}
       </button>
-      <p>
-        Edit <code>src/App.tsx</code> and save to test HMR
-      </p>
     </div>
   );
 }
