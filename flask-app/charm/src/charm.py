@@ -26,7 +26,7 @@ class FlaskAppCharm(paas_charm.flask.Charm):
             args: passthrough to CharmBase.
         """
         super().__init__(*args)
-        self._httpProvider = http_interface.HTTPProvider(self, self._base_url, BACKEND_RELATION_NAME)
+        self._httpProvider = http_interface.HTTPProvider(self, BACKEND_RELATION_NAME)
 
 
 if __name__ == "__main__":

@@ -61,4 +61,7 @@ if (!isProduction) {
 // Start http server
 app.listen(port, () => {
   console.log(`Server started at http://localhost:${port}`);
+  console.log(
+    `BE url: ${process.env.FLASK_BACKEND_HOST}:${process.env.FLASK_BACKEND_PORT}`
+  );
 });

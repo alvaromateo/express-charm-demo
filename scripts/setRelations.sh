@@ -3,7 +3,7 @@ juju deploy nginx-ingress-integrator --trust
 juju config nginx-ingress-integrator \
   service-hostname=express-app.local \
   service-name=express-app \
-  service-port=3010 \
+  service-port=8080 \
   service-namespace=express-flask \
   path-routes=/
 

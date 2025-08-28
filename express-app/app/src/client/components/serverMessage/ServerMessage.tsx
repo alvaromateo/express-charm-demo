@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ApiTestResponse } from "../../types/apiResponseTypes";
 
 function ServerMessage() {
-  const [message, setMessage] = useState("SSR message");
+  const [message, setMessage] = useState("Server message");
 
   useEffect(() => {
     fetch("/api/test")
@@ -14,7 +14,7 @@ function ServerMessage() {
 
   return (
     <div id="dynamic-message">
-      <h3>SSR rendered message</h3>
+      <h3>Server message</h3>
       <p>{message}</p>
     </div>
   );

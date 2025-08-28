@@ -30,16 +30,21 @@ LIBPATCH = 1
 logger = logging.getLogger()
 
 HTTP_INTERFACE_RELATION = "http"
-PROVIDER_URL_KEY = "url"
 
 class HTTPBackendAvailableEvent(RelationEvent):
     """Event representing that http data has been provided."""
 
     @property
-    def url(self) -> str:
-        """Fetch the HTTP url from the relation."""
+    def host(self) -> str:
+        """Fetch the HTTP host from the relation."""
         assert self.relation.app
-        return typing.cast(str, self.relation.data[self.relation.app].get("url"))
+        return typing.cast(str, self.relation.data[self.relation.app].get("host"))
+
+    @property
+    def port(self) -> int:
+        """Fetch the HTTP port from the relation."""
+        assert self.relation.app
+        return typing.cast(int, self.relation.data[self.relation.app].get("port"))
 
 
 class HTTPBackendRemovedEvent(RelationEvent):
@@ -62,10 +67,12 @@ class HttpRelationData(BaseModel):
     """Represent the relation data.
 
     Attributes:
-        url: The URL where the HTTP endpoint is located.
+        host: The host where the HTTP endpoint is located.
+        port: The port where the HTTP endpoint is located.
     """
 
-    url: str
+    host: str
+    port: int
 
     def to_relation_data(self) -> typing.Dict[str, str]:
         """Convert an instance of HttpRelationData to the relation representation.
@@ -74,7 +81,8 @@ class HttpRelationData(BaseModel):
             Dict containing the representation.
         """
         return {
-            "url": str(self.url),
+            "host": str(self.host),
+            "port": str(self.port),
         }
 
 
@@ -153,11 +161,12 @@ class _IntegrationInterfaceBaseClass(Object):
         assert relation.app
         relation_data = relation.data[relation.app]
         if not relation_data:
-            logger.warning(f"relation data for {relation.name} not found")
+            logger.warning(f"Relation data for {relation.name} not found")
             return None
 
         return HttpRelationData(
-            url=typing.cast(str, relation_data.get("url")),
+            host=typing.cast(str, relation_data.get("host")),
+            port=typing.cast(int, relation_data.get("port"))
         )
 
     def _is_relation_data_valid(self, relation: Relation) -> bool:
@@ -236,19 +245,17 @@ class HTTPProvider(_IntegrationInterfaceBaseClass):
     def __init__(
         self,
         charm: CharmBase,
-        url,
         relation_name = HTTP_INTERFACE_RELATION,
     ):
         super().__init__(charm, relation_name)
-        self.url = url
+        self.host = f"{charm.app.name}.{charm.model.name}"
+        self.port = charm._workload_config.port
 
     def _update_relation_data(self, event: RelationEvent) -> None:
         if self.model.unit.is_leader():
-            relation_data = HttpRelationData(url=self.url).to_relation_data()
+            relation_data = HttpRelationData(host=self.host, port=self.port).to_relation_data()
             event.relation.data[self.charm.model.app].update(relation_data)
-            logger.info(f"{event.relation.name} - Add to app data {PROVIDER_URL_KEY}: {self.url}")
-        else:
-            logger.warning(f"{self.relation_name} - Leader = {self.model.unit.is_leader()}, Relations = {self.relations}")
+            logger.info(f"{event.relation.name} - App data {{host: {self.host}, port: {self.port}}}")
 
     def _on_relation_joined(self, event: RelationJoinedEvent) -> None:
         """Handle relation joined event.
@@ -278,6 +285,6 @@ class HTTPProvider(_IntegrationInterfaceBaseClass):
             event: relation-broken event.
         """
         if self.model.unit.is_leader():
-            relation_data = HttpRelationData(url="").to_relation_data()
+            relation_data = HttpRelationData(host="", port=0).to_relation_data()
             event.relation.data[self.charm.model.app].update(relation_data)
             logger.info(f"Removed {event.relation.name} data for app")

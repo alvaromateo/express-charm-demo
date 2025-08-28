@@ -51,9 +51,9 @@ class ExpressApp(App):
         http_relation_data = self._http_integration.get_relation_data()
         if http_relation_data:
             prefix = BACKEND_RELATION_NAME.replace('-', '_').upper()
-            logger.info(f"url = {http_relation_data.url}")
-            #env[f"{prefix}_URL"] = http_relation_data[http_interface.PROVIDER_URL_KEY]
-            #logger.info(f"Added {prefix}_URL = {http_relation_data[http_interface.PROVIDER_URL_KEY]}")
+            env[f"{prefix}_HOST"] = http_relation_data.host
+            env[f"{prefix}_PORT"] = http_relation_data.port
+            logger.info(f"url = {http_relation_data.host}:{http_relation_data.port}")
         return env
 
 

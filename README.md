@@ -73,15 +73,10 @@ First of all you need to start a Multipass VM and you should set up a mounted di
 access this project inside the VM. You can do so with the following commands:
 
 ```sh
-multipass launch --cpus 4 --disk 40G --memory 4G --name charm-dev 24.04
-multipass mount --type=classic . charm-dev:express-charm-demo
-```
-
-For macOS users the first command above changes a bit.
-```sh
 multipass networks
-# attach the VM to the network you use so the k8s pods get internet access
+# attach the VM to the network you use so the k8s pods get internet access (in this case en0)
 multipass launch --cpus 4 --disk 40G --memory 4G --name charm-dev --network en0 24.04
+multipass mount --type=classic . charm-dev:express-charm-demo
 ```
 
 Once the machine is running you can SSH into it:
@@ -119,9 +114,11 @@ IP of the Multipass VM to your /etc/hosts.
 
 If you have 'jq' installed you can run on your host:
 ```sh
-export VM_IP=`multipass list --format json | jq '.list.[] | select(.name == "charm-dev") | .ipv4.[0]' | tr -d \"`
+export VM_IP=`multipass list --format json | jq '.list.[] | select(.name == "charm-dev") | .ipv4.[1]' | tr -d \"`
 echo "${VM_IP} express-app.local" | sudo tee -a /etc/hosts
 ```
+The IP selected should be the bridged network (an IP in the same network range
+your host is), which is usually the second IP in the `multipass list` output.
 
 ### Tips and troubleshooting
 
@@ -165,7 +162,7 @@ you can run the following commands:
 juju destroy-controller dev-controller --destroy-all-models --destroy-storage \
   --force --no-wait --no-prompt
 juju bootstrap microk8s dev
-./scripts/deployApp.sh
+./scripts/deploy.sh
 ```
 
 One of the reasons for things starting to hang is if the VM runs out of space. If that's the

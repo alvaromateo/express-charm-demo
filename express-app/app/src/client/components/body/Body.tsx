@@ -3,9 +3,11 @@ import Counter from "../counter/Counter";
 import ServerMessage from "../serverMessage/ServerMessage";
 
 async function Body() {
-  const message = await fetch(`http://${process.env.FLASK_BACKEND_URL}/api/ssr`)
-      .then((response) => response.json())
-      .then((data) => (data as ApiSSRResponse).message);
+  const message = await fetch(
+    `http://${process.env.FLASK_BACKEND_HOST}:${process.env.FLASK_BACKEND_PORT}/api/ssr`
+  )
+    .then((response) => response.json())
+    .then((data) => (data as ApiSSRResponse).message);
 
   return (
     <>
