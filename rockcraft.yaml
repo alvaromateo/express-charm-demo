@@ -25,6 +25,7 @@ platforms:
 # for more information.
 extensions:
   - flask-framework
+
 # uncomment the sections you need and adjust according to your requirements.
 # parts:  # you need to uncomment this line to add or update any part.
 
@@ -69,3 +70,4 @@ extensions:
 #     stage-packages:
 #       # list required Debian packages for your flask application below.
 #       - libpq5
+

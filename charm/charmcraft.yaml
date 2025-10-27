@@ -22,12 +22,5 @@ summary: A very short one-line summary of the Flask application.
 description: |
   A comprehensive overview of your Flask application.
 
-assumes:
-  - k8s-api
-
 extensions:
   - flask-framework
-
-provides:
-  flask-backend:
-    interface: backend

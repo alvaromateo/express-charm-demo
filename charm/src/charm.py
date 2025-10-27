@@ -9,12 +9,9 @@ import typing
 
 import ops
 import paas_charm.flask
-import charms.http_k8s.v0.http_interface as http_interface
 
 logger = logging.getLogger(__name__)
 
-
-BACKEND_RELATION_NAME = "flask-backend"
 
 class FlaskAppCharm(paas_charm.flask.Charm):
     """Flask Charm service."""
@@ -26,7 +23,6 @@ class FlaskAppCharm(paas_charm.flask.Charm):
             args: passthrough to CharmBase.
         """
         super().__init__(*args)
-        self._httpProvider = http_interface.HTTPProvider(self, BACKEND_RELATION_NAME)
 
 
 if __name__ == "__main__":
