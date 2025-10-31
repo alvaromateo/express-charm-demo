@@ -1,73 +1,178 @@
-name: flask-app
+name: flask-expressjs
+version: "1.0" # just for humans. Semantic versioning is recommended
+summary: A summary of your Flask application # 79 char long summary
+description: |
+  This is flask-expressjs's description. You have a paragraph or two to tell the
+  most important story about it. Keep it under 100 words though,
+  we live in tweetspace and your description wants to look good in the
+  container registries out there.
+
 # see https://documentation.ubuntu.com/rockcraft/en/latest/explanation/bases/
 # for more information about bases and using 'bare' bases for chiselled rocks
 base: bare
 build-base: ubuntu@22.04
-version: "1.0" # just for humans. Semantic versioning is recommended
-summary: A summary of your Flask application # 79 char long summary
-description: |
-  This is flask-app's description. You have a paragraph or two to tell the
-  most important story about it. Keep it under 100 words though,
-  we live in tweetspace and your description wants to look good in the
-  container registries out there.
+
 # the platforms this rock should be built on and run on.
 # you can check your architecture with `dpkg --print-architecture`
 platforms:
   amd64:
   arm64:
-  # ppc64el:
-  # s390x:
 
-# to ensure the flask-framework extension works properly, your Flask application
-# should have an `app.py` file with an `app` object as the WSGI entrypoint.
-# a `requirements.txt` file with at least the flask package should also exist.
-# see https://documentation.ubuntu.com/rockcraft/en/latest/reference/extensions/flask-framework
-# for more information.
-extensions:
-  - flask-framework
+run-user: _daemon_
+services:
+  expressjs:
+    override: replace
+    startup: enabled
+    user: _daemon_
+    working-dir: /express-app
+    command: npm start
+    environment:
+      NODE_ENV: production
+  flask:
+    override: replace
+    command: /bin/python3 -m gunicorn -c /flask/gunicorn.conf.py app:app -k [ sync ]
+    startup: enabled
+    after:
+    - statsd-exporter
+    user: _daemon_
+  statsd-exporter:
+    override: merge
+    command: |
+      /bin/statsd_exporter 
+      --statsd.mapping-config=/statsd-mapping.conf 
+      --statsd.listen-udp=localhost:9125 
+      --statsd.listen-tcp=localhost:9125 
+    summary: statsd exporter service
+    startup: enabled
+    user: _daemon_
 
-# uncomment the sections you need and adjust according to your requirements.
-# parts:  # you need to uncomment this line to add or update any part.
+# the uid/gid 584792 are for _daemon_ user
+parts:
+  # flask
+  flask/dependencies:
+    plugin: python
+    stage-packages:
+    - python3.10-venv_ensurepip
+    source: ./flask-app
+    python-packages:
+    - gunicorn~=23.0
+    python-requirements:
+    - requirements.txt
+    build-environment:
+    - PARTS_PYTHON_INTERPRETER: python3.10
+  flask/install-app:
+    plugin: dump
+    source: ./flask-app
+    organize:
+      app: flask/app/app
+      app.py: flask/app/app.py
+      migrate: flask/app/migrate
+      migrate.sh: flask/app/migrate.sh
+      migrate.py: flask/app/migrate.py
+      static: flask/app/static
+      templates: flask/app/templates
+    stage:
+    - flask/app/app
+    - flask/app/app.py
+    # uncomment the following lines and/or add more as needed
+    # - flask/app/migrate
+    # - flask/app/migrate.sh
+    # - flask/app/migrate.py
+    # - flask/app/static
+    # - flask/app/templates
+    prime:
+    - flask/app/app
+    - flask/app/app.py
+    # - flask/app/migrate
+    # - flask/app/migrate.sh
+    # - flask/app/migrate.py
+    # - flask/app/static
+    # - flask/app/templates
+    permissions:
+    - owner: 584792
+      group: 584792
+  flask/config-files:
+    plugin: dump
+    source: .
+    organize:
+      gunicorn.conf.py: flask/gunicorn.conf.py
+    stage:
+    - flask
+    prime:
+    - flask
+    permissions:
+    - path: flask/gunicorn.conf.py
+      owner: 584792
+      group: 584792
+  flask/statsd-exporter:
+    build-snaps:
+    - go
+    source-tag: v0.26.0
+    plugin: go
+    source: https://github.com/prometheus/statsd_exporter.git
+  flask/runtime:
+    plugin: nil
+    override-build: mkdir -m 777 ${CRAFT_PART_INSTALL}/tmp
+    stage-packages:
+    - bash_bins
+    - coreutils_bins
+    - ca-certificates_data
+  
+  # express
+  expressjs/install-app:
+    npm-node-version: lts/jod
+    npm-include-node: true
+    build-snaps:
+    - node/22/stable
+    override-build: |
+      rm -rf node_modules
+      # We need the dev dependencies to build the app
+      npm install --include=dev
+      npm run build
+      # run the default build step
+      craftctl default
 
-#   flask-framework/install-app:
-#     prime:
-#       # by default, only the files in app/, templates/, static/, migrate, migrate.sh,
-#       # migrate.py and app.py are copied into the image. You can modify the list
-#       # below to override the default list and include or exclude specific
-#       # files/directories in your project.
-#       # note: prefix each entry with "flask/app/" followed by the local path.
-#       - flask/app/.env
-#       - flask/app/app.py
-#       - flask/app/webapp
-#       - flask/app/templates
-#       - flask/app/static
+      # We need to copy the built files to the install directory
+      mkdir -p ${CRAFT_PART_INSTALL}/lib/node_modules/expressjs/dist
+      cp -r dist/. ${CRAFT_PART_INSTALL}/lib/node_modules/expressjs/dist
+      npm config set script-shell=bash --location project
+      cp ${CRAFT_PART_BUILD}/.npmrc ${CRAFT_PART_INSTALL}/lib/node_modules/expressjs/.npmrc
+      chown -R 584792:584792 ${CRAFT_PART_INSTALL}/lib/node_modules/expressjs
+      ln -s /lib/node_modules/expressjs ${CRAFT_PART_INSTALL}/expressjs
+      chown -R 584792:584792 ${CRAFT_PART_INSTALL}/expressjs
+    plugin: npm
+    source: ./express-app/app/
+    stage-packages:
+    - bash_bins
+    - ca-certificates_data
+    - coreutils_bins
+    stage:
+    - expressjs
+    prime:
+    - expressjs
+    build-environment:
+    - UV_USE_IO_URING: '0'
+  expressjs/runtime:
+    plugin: nil
+    stage-packages:
+    - libstdc++6
+    - zlib1g
 
-# you may need Ubuntu packages to build a python dependency. Add them here if necessary.
-#   flask-framework/dependencies:
-#     build-packages:
-#       # for example, if you need pkg-config and libxmlsec1-dev to build one
-#       # of your packages:
-#       - pkg-config
-#       - libxmlsec1-dev
-
-# you can add package slices or Debian packages to the image.
-# package slices are subsets of Debian packages, which result
-# in smaller and more secure images.
-# see https://documentation.ubuntu.com/rockcraft/en/latest/explanation/chisel/
-
-# add this part if you want to add packages slices to your image.
-# you can find a list of packages slices at https://github.com/canonical/chisel-releases
-#   runtime-slices:
-#     plugin: nil
-#     stage-packages:
-#       # list the required package slices for your flask application below.
-#       # for example, for the slice libs of libpq5:
-#       - libpq5_libs
-
-# if you want to add a Debian package to your image, add the next part
-#   runtime-debs:
-#     plugin: nil
-#     stage-packages:
-#       # list required Debian packages for your flask application below.
-#       - libpq5
-
+  #logging
+  logging:
+    plugin: nil
+    override-build: |-
+      craftctl default
+      mkdir -p $CRAFT_PART_INSTALL/opt/promtail
+      mkdir -p $CRAFT_PART_INSTALL/etc/promtail
+      mkdir -p $CRAFT_PART_INSTALL/var/log/flask
+    permissions:
+    - path: opt/promtail
+      owner: 584792
+      group: 584792
+    - path: etc/promtail
+      owner: 584792
+      group: 584792
+    - path: var/log/flask
+      owner: 584792
+      group: 584792
