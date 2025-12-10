@@ -1,7 +1,7 @@
 # This file configures Charmcraft.
 # See https://juju.is/docs/sdk/charmcraft-config for guidance.
 
-name: flask-app
+name: demo-app
 
 type: charm
 

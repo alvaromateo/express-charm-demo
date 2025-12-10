@@ -15,11 +15,5 @@ fi
 export ROCKCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS=True
 export CHARMCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS=True
 
-cd express-app && rockcraft clean && cd ..
-cd flask-app && rockcraft clean && cd ..
-
-rm express-app/*.rock
-rm express-app/charm/*.charm
-
-rm flask-app/*.rock
-rm flask-app/charm/*.charm
+rockcraft clean
+rm charm/*.charm

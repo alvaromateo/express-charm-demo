@@ -75,7 +75,7 @@ access this project inside the VM. You can do so with the following commands:
 ```sh
 multipass networks
 # attach the VM to the network you use so the k8s pods get internet access (in this case en0)
-multipass launch --cpus 4 --disk 40G --memory 4G --name charm-dev --network en0 24.04
+multipass launch --cpus 4 --disk 60G --memory 4G --name charm-dev --network en0 24.04
 multipass mount --type=classic . charm-dev:express-charm-demo
 ```
 
