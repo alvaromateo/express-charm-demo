@@ -1,5 +1,5 @@
 name: flask-expressjs
-version: "1.0" # just for humans. Semantic versioning is recommended
+version: "1.11" # just for humans. Semantic versioning is recommended
 summary: A summary of your Flask application # 79 char long summary
 description: |
   This is flask-expressjs's description. You have a paragraph or two to tell the
@@ -10,7 +10,7 @@ description: |
 # see https://documentation.ubuntu.com/rockcraft/en/latest/explanation/bases/
 # for more information about bases and using 'bare' bases for chiselled rocks
 base: bare
-build-base: ubuntu@22.04
+build-base: ubuntu@24.04
 
 # the platforms this rock should be built on and run on.
 # you can check your architecture with `dpkg --print-architecture`
@@ -24,13 +24,18 @@ services:
     override: replace
     startup: enabled
     user: _daemon_
-    working-dir: /express-app
+    working-dir: /expressjs
     command: npm start
     environment:
       NODE_ENV: production
+      PORT: 3010
+      FLASK_BACKEND_HOST: localhost
+      FLASK_BACKEND_PORT: 8000
   flask:
     override: replace
     command: /bin/python3 -m gunicorn -c /flask/gunicorn.conf.py app:app -k [ sync ]
+    environment:
+      PORT: 8000
     startup: enabled
     after:
     - statsd-exporter
@@ -52,19 +57,19 @@ parts:
   flask/dependencies:
     plugin: python
     stage-packages:
-    - python3.10-venv_ensurepip
+    - python3.12-venv_ensurepip
     source: ./flask-app
     python-packages:
     - gunicorn~=23.0
     python-requirements:
     - requirements.txt
     build-environment:
-    - PARTS_PYTHON_INTERPRETER: python3.10
+    - PARTS_PYTHON_INTERPRETER: python3.12
   flask/install-app:
     plugin: dump
     source: ./flask-app
     organize:
-      app: flask/app/app
+      webapp: flask/app/webapp
       app.py: flask/app/app.py
       migrate: flask/app/migrate
       migrate.sh: flask/app/migrate.sh
@@ -72,7 +77,7 @@ parts:
       static: flask/app/static
       templates: flask/app/templates
     stage:
-    - flask/app/app
+    - flask/app/webapp
     - flask/app/app.py
     # uncomment the following lines and/or add more as needed
     # - flask/app/migrate
@@ -81,7 +86,7 @@ parts:
     # - flask/app/static
     # - flask/app/templates
     prime:
-    - flask/app/app
+    - flask/app/webapp
     - flask/app/app.py
     # - flask/app/migrate
     # - flask/app/migrate.sh
@@ -93,15 +98,21 @@ parts:
       group: 584792
   flask/config-files:
     plugin: dump
-    source: .
+    source: ./config
     organize:
       gunicorn.conf.py: flask/gunicorn.conf.py
+      statsd-mapping.conf: /statsd-mapping.conf
     stage:
     - flask
+    - statsd-mapping.conf
     prime:
     - flask
+    - statsd-mapping.conf
     permissions:
     - path: flask/gunicorn.conf.py
+      owner: 584792
+      group: 584792
+    - path: /statsd-mapping.conf
       owner: 584792
       group: 584792
   flask/statsd-exporter:
@@ -123,7 +134,7 @@ parts:
     npm-node-version: lts/jod
     npm-include-node: true
     build-snaps:
-    - node/22/stable
+    - node/18/stable
     override-build: |
       rm -rf node_modules
       # We need the dev dependencies to build the app
@@ -133,12 +144,20 @@ parts:
       craftctl default
 
       # We need to copy the built files to the install directory
-      mkdir -p ${CRAFT_PART_INSTALL}/lib/node_modules/expressjs/dist
-      cp -r dist/. ${CRAFT_PART_INSTALL}/lib/node_modules/expressjs/dist
+      mkdir -p ${CRAFT_PART_INSTALL}/expressjs/dist
+      cp -r dist/. ${CRAFT_PART_INSTALL}/expressjs/dist
+      cp package.json ${CRAFT_PART_INSTALL}/expressjs
+
+      # include necessary node_modules
+      rm -rf node_modules
+      npm install --omit=dev
+      cp -r node_modules ${CRAFT_PART_INSTALL}/expressjs
+      
+      # copy npm config
       npm config set script-shell=bash --location project
-      cp ${CRAFT_PART_BUILD}/.npmrc ${CRAFT_PART_INSTALL}/lib/node_modules/expressjs/.npmrc
-      chown -R 584792:584792 ${CRAFT_PART_INSTALL}/lib/node_modules/expressjs
-      ln -s /lib/node_modules/expressjs ${CRAFT_PART_INSTALL}/expressjs
+      cp ${CRAFT_PART_BUILD}/.npmrc ${CRAFT_PART_INSTALL}/expressjs/.npmrc
+
+      # set up permissions
       chown -R 584792:584792 ${CRAFT_PART_INSTALL}/expressjs
     plugin: npm
     source: ./express-app/app/
@@ -157,6 +176,8 @@ parts:
     stage-packages:
     - libstdc++6
     - zlib1g
+    - nodejs
+    - npm
 
   #logging
   logging:

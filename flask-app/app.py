@@ -2,7 +2,7 @@ import os
 
 from flask import Flask
 
-import app.constants as constants
+import webapp.constants as constants
 
 
 app = Flask(__name__)

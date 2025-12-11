@@ -25,4 +25,4 @@ version=$(grep '^version:' 'rockcraft.yaml' | cut -d' ' -f2 | tr -d '"')
 rock_name=$(grep '^name:' 'rockcraft.yaml' | cut -d' ' -f2)
 cd charm
 charm_name=$(grep '^name:' 'charmcraft.yaml' | cut -d' ' -f2)
-cd ../..
+cd ..

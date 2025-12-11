@@ -36,11 +36,11 @@ if [ $app_deployed -eq 1 ]; then
   # app is already deployed, so we refresh it
   juju refresh ${charm_name} \
     --path ./charm/${charm_name}_${architecture}.charm \
-    --resource app-image=localhost:32000/${rock_name}:${version}
+    --resource flask-app-image=localhost:32000/${rock_name}:${version}
 else
   # app is not deployed
   juju deploy \
     ./charm/${charm_name}_${architecture}.charm \
     ${charm_name} \
-    --resource app-image=localhost:32000/${rock_name}:${version}
+    --resource flask-app-image=localhost:32000/${rock_name}:${version}
 fi

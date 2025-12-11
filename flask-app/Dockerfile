@@ -12,6 +12,7 @@ COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 COPY --chown=app:app app.py ./
+COPY --chown=app:app webapp ./
 
 # TODO: add possibility to attach debugger
 
