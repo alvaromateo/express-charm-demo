@@ -10,4 +10,4 @@ juju config nginx-ingress-integrator \
   rewrite-target=/
 
 # Set relation between nginx-ingress-integrator and demo-app
-juju relate demo-app nginx-ingress-integrator:ingress
+juju relate demo-app:ingress-frontend nginx-ingress-integrator:ingress

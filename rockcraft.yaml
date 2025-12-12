@@ -1,5 +1,5 @@
 name: flask-expressjs
-version: "1.11" # just for humans. Semantic versioning is recommended
+version: "1.1" # just for humans. Semantic versioning is recommended
 summary: A summary of your Flask application # 79 char long summary
 description: |
   This is flask-expressjs's description. You have a paragraph or two to tell the

@@ -16,11 +16,32 @@ platforms:
   # s390x:
 
 # (Required)
-summary: A very short one-line summary of the Flask application.
+summary: A very short one-line summary of the Demo application.
 
 # (Required)
 description: |
-  A comprehensive overview of your Flask application.
+  A comprehensive overview of your Demo application.
 
+# the charm extends the ExpressJS base class because the ingress uses the port
+# set by the charm in the relation
 extensions:
   - flask-framework
+
+requires:
+  ingress-frontend:
+    interface: ingress
+    limit: 1
+
+# containers:
+#   expressjs-app:
+#     resource: flask-app-image
+#   flask-app:
+#     resource: flask-app-image
+
+config:
+  options:
+    frontend-port:
+      default: 3010
+      description: >-
+        Port for the frontend service (expressjs)
+      type: int
