@@ -2,8 +2,8 @@ name: flask-app
 # see https://documentation.ubuntu.com/rockcraft/en/latest/explanation/bases/
 # for more information about bases and using 'bare' bases for chiselled rocks
 base: bare
-build-base: ubuntu@22.04
-version: "1.0" # just for humans. Semantic versioning is recommended
+build-base: ubuntu@24.04
+version: "1.3" # just for humans. Semantic versioning is recommended
 summary: A summary of your Flask application # 79 char long summary
 description: |
   This is flask-app's description. You have a paragraph or two to tell the
@@ -25,21 +25,21 @@ platforms:
 # for more information.
 extensions:
   - flask-framework
-# uncomment the sections you need and adjust according to your requirements.
-# parts:  # you need to uncomment this line to add or update any part.
 
-#   flask-framework/install-app:
-#     prime:
-#       # by default, only the files in app/, templates/, static/, migrate, migrate.sh,
-#       # migrate.py and app.py are copied into the image. You can modify the list
-#       # below to override the default list and include or exclude specific
-#       # files/directories in your project.
-#       # note: prefix each entry with "flask/app/" followed by the local path.
-#       - flask/app/.env
-#       - flask/app/app.py
-#       - flask/app/webapp
-#       - flask/app/templates
-#       - flask/app/static
+# uncomment the sections you need and adjust according to your requirements.
+parts:
+  flask-framework/install-app:
+    # by default, only the files in app/, templates/, static/, migrate, migrate.sh,
+    # migrate.py and app.py are copied into the image. You can modify the list
+    # below to override the default list and include or exclude specific
+    # files/directories in your project.
+    # note: prefix each entry with "flask/app/" followed by the local path.
+    stage:
+      - flask/app/webapp
+      - flask/app/app.py
+    prime:
+      - flask/app/app.py
+      - flask/app/webapp
 
 # you may need Ubuntu packages to build a python dependency. Add them here if necessary.
 #   flask-framework/dependencies:
@@ -69,3 +69,17 @@ extensions:
 #     stage-packages:
 #       # list required Debian packages for your flask application below.
 #       - libpq5
+
+# these dependencies are needed to make flask work on 24.04
+# cause the extension default uses python 3.10 dependencies
+  flask-framework/dependencies:
+    plugin: python
+    stage-packages:
+    - python3.12-venv_ensurepip
+    source: .
+    python-packages:
+    - gunicorn~=23.0
+    python-requirements:
+    - requirements.txt
+    build-environment:
+    - PARTS_PYTHON_INTERPRETER: python3.12

@@ -5,7 +5,9 @@ juju config nginx-ingress-integrator \
   service-name=express-app \
   service-port=8080 \
   service-namespace=express-flask \
-  path-routes=/
+  path-routes=/ \
+  rewrite-enabled=false \
+  rewrite-target=/
 
 # Set relation between nginx-ingress-integrator and express-app
 juju relate express-app nginx-ingress-integrator:ingress

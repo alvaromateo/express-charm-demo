@@ -30,6 +30,9 @@ sudo microk8s enable hostpath-storage
 sudo microk8s enable registry
 # Required to expose the application
 sudo microk8s enable ingress
+# Required for COS
+IPADDR=$(ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc')
+sudo microk8s enable metallb:$IPADDR-$IPADDR
 
 sudo microk8s status --wait-ready
 
